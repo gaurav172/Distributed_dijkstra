@@ -7,7 +7,7 @@
     send_to_neighbours/2, 
     wait_for_response/3,
     wait_for_response/4, 
-    read_and_send/2]).
+    read_and_send/3]).
 
 -import(helpers, [hello/1]).
 
@@ -69,14 +69,14 @@ wait_for_response(Pids, Response, Accumulator, Result) ->
             )
     end.
 
-read_and_send(Device, Id) ->
+read_and_send(Device, CurRow, Id) ->
     % [{_, SPid}] = ets:lookup(procTable, Id),
     Row = read_int_line(Device),
     case Row of 
         [] -> 
             ok;
         [H|T] ->
-            Msg = {input, Row},
+            Msg = {input, Row, CurRow},
             % Sends Msg to process with PID id
             Id ! Msg,
             [H|T]

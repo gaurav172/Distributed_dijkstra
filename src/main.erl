@@ -26,7 +26,7 @@ start() ->
     
 % Open the test file to read
     helpers:hello(["shit"]),
-    {ok, Device} = file:open("./test.txt", [read]),
+    {ok, Device} = file:open("./test2.txt", [read]),
 % Get first line of input and print it.
     [NumVertices, NumProcs, Source] = distributors:read_int_line(Device),
     
@@ -44,25 +44,26 @@ start() ->
                         Data;
                     true ->
                         Row = distributors:read_int_line(Device),
-                        F(lists:append(Data, Row), CurRow+1, EndRow)
+                        % F(lists:append(Data, Row), CurRow+1, EndRow)
+                        F(maps:put(CurRow, Row, Data), CurRow + 1, EndRow)
                 end
             end,
     
 
     helpers:hello(["start", erlang:system_time(), erlang:timestamp()]),
-    LocalData = GetData([], 1, lists:nth(1, Displs)),
+    LocalData = GetData(#{}, 1, lists:nth(1, Displs)),
     % helpers:hello([LocalData]),
 
     Pids = dijkstra:distribute_graph(Device, SysProps, Displs, lists:nth(1, Displs)+1, 1, self()),
     % helpers:hello([self(), Pids]),
-    distributors:send_to_neighbours(Pids, {init, {0, Source}}),
+    distributors:send_to_neighbours(Pids, {init, {0, Source, maps:get(Source, LocalData)}}),
     {Time, _} = timer:tc(dijkstra,init_dijkstra,[
         1,
         helpers:get_bounds(Displs, 1),
         LocalData,
         SysProps,
         Displs,
-        {0, Source}, 
+        {0, Source, maps:get(Source, LocalData)}, 
         Pids
     ]),
     % End_time = dijkstra:init_dijkstra(

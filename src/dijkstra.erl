@@ -12,32 +12,37 @@
 % ProcData = {LocalDist, Visited}
 
 spawner(SysProps, Displs, Rank) ->
-    spawn(dijkstra, proc_run, [Rank, helpers:get_bounds(Displs, Rank), [], SysProps, Displs, [self()]]).
+    spawn(dijkstra, proc_run, [Rank, helpers:get_bounds(Displs, Rank), #{}, SysProps, Displs, [self()]]).
 
 reduce_task(ProcProps, ProcData, LocalData, SysProps, SourceProps, Pids)->
     % Rank = helpers:get_rank(),
-    {NumVertices, _} = SysProps,
     {StartRow, EndRow} = ProcProps,
     ProcInfo = {ProcData, ProcProps},
     % {LocalDist, Visited} = ProcData,
     % {SourceDist, Source} = SourceProps,
+
+    {_, _, SourceData} = SourceProps,
+    Edges = lists:sublist(SourceData, StartRow, EndRow - StartRow + 1),
 % 
 % { UpdateDist , UpdateVisited }
     UpdateProcData = relax_edges(
                         SourceProps,
                         ProcInfo,
-                        get_col(LocalData, element(2, SourceProps), NumVertices)
+                        Edges
+                        % get_col(LocalData, element(2, SourceProps), NumVertices)
                     ),
     
+    {Dist, Id} = get_minimum_vert(
+                    UpdateProcData,
+                    StartRow 
+                ),
+
     distributors:send_to_neighbours(
             Pids,
             {
                 reduction, 
                 self(),
-                get_minimum_vert(
-                    UpdateProcData,
-                    StartRow 
-                )     
+                {Dist, Id, maps:get(Id, LocalData, [])}   
             }
         ),
 
@@ -69,7 +74,6 @@ map_task(ProcProps, ProcData, LocalData, SysProps, SourceProps, Pids) ->
     % Neighs = lists:delete(Rank, lists:seq(1, NumProcs)),
     % Get the vertices for current process
     % Accumulator just takes the minimum value of two Vars
-    {NumVertices, _} = SysProps,
     {StartRow, EndRow} = ProcProps,
     ProcInfo = {ProcData, ProcProps},
     Accumulator = fun(X, Y) ->
@@ -81,21 +85,27 @@ map_task(ProcProps, ProcData, LocalData, SysProps, SourceProps, Pids) ->
                 end
             end, 
     
+    {_, _, SourceData} = SourceProps,
+    Edges = lists:sublist(SourceData, StartRow, EndRow - StartRow + 1),
+    
     UpdateProcData = relax_edges(
                         SourceProps,
                         ProcInfo,
-                        get_col(LocalData, element(2, SourceProps), NumVertices)
+                        Edges
+                        % get_col(LocalData, element(2, SourceProps), NumVertices)
                     ),
 
     % Get minimum vertex from each process
+    {Dist, Id} = helpers:get_minimum_vert(
+                    UpdateProcData,
+                    StartRow
+                ),
+    
     MinVertexProps = distributors:wait_for_response(
                 Pids,
                 reduction,
                 Accumulator,
-                helpers:get_minimum_vert(
-                    UpdateProcData,
-                    StartRow
-                )
+                {Dist, Id, maps:get(Id, LocalData, [])}
             ),
    
     case element(1, MinVertexProps) of
@@ -161,14 +171,14 @@ relax_edges([Edge | RestEdges], [H|T], Index, BaseDist) ->
 
 proc_run(Rank, ProcProps, LocalData, SysProps, Displs, Pids) ->
     receive
-        {input, Data} ->
+        {input, Data, CurRow} ->
 
             % helpers:hello(["received", self(), Data, LocalData]),
             % Takes input Data and adds it to the LocalData List
             proc_run(
                 Rank,
                 ProcProps,
-                lists:append(LocalData, Data),
+                maps:put(CurRow, Data, LocalData),
                 SysProps,
                 Displs,  
                 Pids
@@ -196,7 +206,8 @@ init_dijkstra(Rank, ProcProps, LocalData, SysProps, Displs, SourceProps, Pids) -
     ProcProps = helpers:get_bounds(Displs, Rank),
     % Get the Start and End vertices of this process
     {StartRow, EndRow} = ProcProps,
-    {_, Source} = SourceProps,
+    helpers:hello([Rank,"Fine"]),
+    {_, Source, _} = SourceProps,
     % Initialize the distance array by infinity for all vertices except for source.
     LocalDist = case { StartRow =< Source , Source =< EndRow } of
                     {true, true} ->
@@ -241,7 +252,7 @@ distribute_graph(Device, SysProps, Displs, CurRow, CurIndex, CurPid) ->
         % Current Row belongs to the Process curPid so get its data
         % and send to curPid 
         CurRow =< EndRow ->
-            distributors:read_and_send(Device, CurPid),
+            distributors:read_and_send(Device, CurRow, CurPid),
             distribute_graph(
                 Device, 
                 SysProps, 
