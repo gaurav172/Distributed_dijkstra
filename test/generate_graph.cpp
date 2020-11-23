@@ -41,15 +41,12 @@ int main()
   
     for (int i=1; i<=RUN; i++) 
     { 
-        NUM = 1 + rand() % MAX_VERTICES; 
+        scanf("%d", &NUM); 
   
         // Define the maximum number of edges of the graph 
         // Since the most dense graph can have N*(N-1)/2 edges 
         // where N =  n number of vertices in the graph 
-        NUMEDGE = 1 + rand() % MAX_EDGES; 
-  
-        while (NUMEDGE > NUM*(NUM-1)/2) 
-            NUMEDGE = 1 + rand() % MAX_EDGES; 
+        NUMEDGE = min( 6 * NUM, NUM * (NUM - 1) / 2); 
   
         // First print the number of vertices and edges 
         printf("%d %d\n", NUM, NUMEDGE); 
@@ -73,21 +70,25 @@ int main()
             } 
             container.insert(p); 
         } 
-  
+
         for (it=container.begin(); it!=container.end(); ++it) 
         { 
             int wt = 1 + rand() % MAXWEIGHT; 
-            printf("%d %d %d\n", it->first, it->second, wt);
+            // printf("%d %d %d\n", it->first, it->second, wt);
             graph[it->first][it->second] = wt; 
         } 
 
-        int source = 1 + rand()%NUM;
-        int num_proc = 1 + rand()%MAX_PROC;
+        int source = 1;
+        int num_proc;
+        scanf("%d", &num_proc);
         cout<<endl;
         cout<<"Num_Proc: "<<num_proc<<" Source: "<<source<<endl;
 
         ofstream myfile;
-        myfile.open ("test.txt"); 
+        char ifname[1000];
+        sprintf(ifname, "test_%d_%d.txt", NUM, num_proc);
+        printf("filename:%s\n", ifname);
+        myfile.open ( ifname ); 
         myfile<<NUM<<" "<<num_proc<<" "<<source<<endl;
         for(int i=1;i<=NUM;i++)
         {
