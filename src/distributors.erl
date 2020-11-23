@@ -2,8 +2,9 @@
 
 -include("macros.hrl").
 -export([
-    % register_proc/2, 
-    read_int_line/1, 
+    read_int_line/1,
+    send_data/4,
+    send_data_init/4,
     send_to_neighbours/2, 
     wait_for_response/3,
     wait_for_response/4, 
@@ -12,11 +13,6 @@
 -import(helpers, [hello/1]).
 
 
-
-
-% register_proc(Pid, Id) ->
-%     ets:insert(procTable, {Id, Pid}),
-%     ets:insert(idTable, {Pid, Id}).
 
 % Reads a line, Trim will remove extra spaces from the line.
 % Split converts it into a List of Space separated strings
@@ -43,12 +39,26 @@ read_int_line(Device) ->
                 )
     end.
 
+send_data_init([], _, _, _) -> ok;
+send_data_init([Pid | Pids], [EndRow | Displs], CurRow , Msg) ->
+    {Dist, Id, Edges} = Msg,
+    {Data, NextEdges} = lists:split(EndRow - CurRow + 1, Edges),
+
+    Pid ! {init, {Dist, Id, Data}},
+    send_data_init(Pids, Displs, EndRow + 1, {Dist, Id, NextEdges}).
+
+send_data([], _, _, _) -> ok;
+send_data([Pid | Pids], [EndRow | Displs], CurRow , Msg) ->
+    {Dist, Id, Edges} = Msg,
+    {Data, NextEdges} = lists:split(EndRow - CurRow + 1, Edges),
+
+    Pid ! {reduction, {Dist, Id, Data}},
+    send_data(Pids, Displs, EndRow + 1, {Dist, Id, NextEdges}).
+
 
 send_to_neighbours(Neighs, Msg) ->
     lists:foreach(
             fun(Pid) ->
-                % helpers:hello(["pid", Pid, self(), Msg]),
-            %    [{_, SPid}] = ets:lookup(procTable, Pid),
                 Pid ! Msg
             end,
             Neighs
@@ -70,7 +80,6 @@ wait_for_response(Pids, Response, Accumulator, Result) ->
     end.
 
 read_and_send(Device, CurRow, Id) ->
-    % [{_, SPid}] = ets:lookup(procTable, Id),
     Row = read_int_line(Device),
     case Row of 
         [] -> 

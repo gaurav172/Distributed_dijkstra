@@ -6,11 +6,7 @@
     get_minimum_vert/4,
     get_proc_rank/2,
     get_proc_rank/3,
-    % get_bounds/1,
     get_bounds/2,
-    % get_pid/1,
-    % get_rank/0,
-    % get_rank/1,
     get_row/3,
     get_col/3,
     hello/1]).
@@ -28,22 +24,15 @@ make_displs(NumVertices, NumProcs) ->
     % Length of Array would be NumProcs 
 
     A = lists:seq(PerProc + 1, (PerProc + 1)*RemProc, PerProc + 1),
-    B = lists:seq(lists:last(A) + PerProc, NumVertices, PerProc),
+    B = case A of
+        [] ->
+            lists:seq(PerProc, NumVertices, PerProc);
+        _ ->
+            lists:seq(lists:last(A) + PerProc, NumVertices, PerProc)
+        end,
 
     Displs = lists:append(A, B),
     Displs.
-    % InitDispls = lists:droplast(lists:seq(PerProc, NumVertices, PerProc)),
-    % lists:append(
-    %     InitDispls,
-    %     [
-    %         case InitDispls of
-    %             [] ->
-    %                 PerProc+RemProc;
-    %             _ ->
-    %                 lists:last(InitDispls)+PerProc+RemProc
-    %         end
-    %     ]
-    % ).
 
 get_minimum_vert({Dist, Visited}, BaseVert) ->
     get_minimum_vert(Dist, BaseVert, Visited).
@@ -54,9 +43,9 @@ get_minimum_vert(Dist, BaseVert, Visited) ->
 get_minimum_vert([], _, _, _) ->
     {?Inf, -1};
 
-get_minimum_vert([H | T], Index, BaseVert, Visited) ->
-    RetList = get_minimum_vert(T, Index+1, BaseVert, Visited),
-    case element(1, RetList) < H orelse lists:member(Index+BaseVert-1, Visited) of 
+get_minimum_vert([H | T], Index, BaseVert, [Vis | VisitedList]) ->
+    RetList = get_minimum_vert(T, Index+1, BaseVert, VisitedList),
+    case element(1, RetList) < H orelse Vis == 1 of 
         false ->
             {H, Index+BaseVert-1};
         true ->
@@ -76,10 +65,7 @@ get_proc_rank(Displs, Rank, RowNumber)  ->
             Rank
     end.
 
-% get_bounds(SysProps) -> 
-    % get_bounds(SysProps, get_rank()).
 get_bounds(Displs, Rank) ->
-    % hello(SysProps),
     EndRow = lists:nth(Rank, Displs),
     StartRow = case Rank of
         1 ->
@@ -87,29 +73,10 @@ get_bounds(Displs, Rank) ->
         _ ->
             lists:nth(Rank-1, Displs) + 1
         end,
-    
-    % {NumVertices, NumProcs} = SysProps,
-    % StartRow = (Rank-1)*(NumVertices div NumProcs)+1,
-    % EndRow = case Rank of
-    %     NumProcs ->
-    %         Rank*(NumVertices div NumProcs) + NumVertices rem NumProcs;
-    %     _ ->
-    %         Rank*(NumVertices div NumProcs)
-    %     end,
     {
         StartRow,
         EndRow
     }.
-
-
-% get_pid(Rank) ->
-%     [{_, Pid}] = ets:lookup(procTable, Rank),
-%     Pid.
-% get_rank() -> 
-%     get_rank(self()).
-% get_rank(Pid) ->
-%     [{_, Rank}] = ets:lookup(idTable, Pid),
-%     Rank.
 
 get_row(Data, RowNumber, NumVertices) ->
     lists:sublist(Data, NumVertices*RowNumber+1, NumVertices).

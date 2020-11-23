@@ -7,7 +7,7 @@ using namespace std;
 // Define the maximum number of vertices of the graph 
 const int MAX_VERTICES = 5000;
 // Define the maximum number of edges 
-const int MAX_EDGES =  1000; 
+const int MAX_EDGES =  100; 
 // Define the maximum weight of edges 
 #define MAXWEIGHT 10
 const int MAX_PROC = min(MAX_VERTICES,25); 
@@ -101,13 +101,14 @@ int main()
             graph[it->second][it->first] = wt; 
         } 
 
-        int source = 1 + rand()%NUM;
-        int num_proc = 1 + rand()%MAX_PROC;
+        int source = 1;
+        int num_proc = 2 + rand()%MAX_PROC;
+        num_proc = min(num_proc, NUM);
         cout<<endl;
         cout<<"Num_Proc: "<<num_proc<<" Source: "<<source<<endl;
         cout<<"Num Vertices:"<<NUM<<" Num Edges:"<<NUMEDGE<<endl;
         ofstream myfile;
-        myfile.open ("test.txt"); 
+        myfile.open ("test3.txt");
         myfile<<NUM<<" "<<num_proc<<" "<<source<<endl;
         for(int i=1;i<=NUM;i++)
         {

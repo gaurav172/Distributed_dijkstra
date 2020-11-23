@@ -17,7 +17,6 @@ compile_files(Files) ->
     ).
 
 start() ->
-    helpers:hello(["called"]),
     compile_files([
         distributors,
         helpers,
@@ -25,7 +24,6 @@ start() ->
     ]),
     
 % Open the test file to read
-    helpers:hello(["shit"]),
     {ok, Device} = file:open("./test2.txt", [read]),
 % Get first line of input and print it.
     [NumVertices, NumProcs, Source] = distributors:read_int_line(Device),
@@ -36,7 +34,7 @@ start() ->
 % Stores displacement, displs[i] = num of vertices in 1..i 
     % Displs = lists:append(helpers:make_displs(NumVertices, NumProcs), [ ?Inf ] ),
     Displs = helpers:make_displs(NumVertices, NumProcs),
-    helpers:hello(["Num_Processes", Displs]),
+    helpers:hello(["Nodes Per Processes", Displs]),
     % Takes the input Graph. Each Row represents some data element.
     GetData = fun F(Data, CurRow, EndRow) ->
                 if 
@@ -50,13 +48,14 @@ start() ->
             end,
     
 
-    helpers:hello(["start", erlang:system_time(), erlang:timestamp()]),
     LocalData = GetData(#{}, 1, lists:nth(1, Displs)),
-    % helpers:hello([LocalData]),
-
     Pids = dijkstra:distribute_graph(Device, SysProps, Displs, lists:nth(1, Displs)+1, 1, self()),
-    % helpers:hello([self(), Pids]),
-    distributors:send_to_neighbours(Pids, {init, {0, Source, maps:get(Source, LocalData)}}),
+    distributors:send_data_init(
+        Pids,
+        element(2, lists:split(1, Displs)),
+        lists:nth(1,Displs)+1,
+        {0, Source, element(2,lists:split(lists:nth(1,Displs), maps:get(Source, LocalData)))}
+    ),
     {Time, _} = timer:tc(dijkstra,init_dijkstra,[
         1,
         helpers:get_bounds(Displs, 1),
@@ -66,14 +65,5 @@ start() ->
         {0, Source, maps:get(Source, LocalData)}, 
         Pids
     ]),
-    % End_time = dijkstra:init_dijkstra(
-    %     1,
-    %     helpers:get_bounds(SysProps, 1),
-    %     LocalData,
-    %     SysProps, 
-    %     {0, Source}, 
-    %     Pids
-    % ),
    helpers:hello([Time/1000000]),
-%    helpers:hello([os:timestamp()]),
    file:close(Device).
