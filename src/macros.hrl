@@ -1,0 +1,2 @@
+-define(Inf, 100000000).
+-define(GetElement(R,C,N,L), list:nth(R*N + C, L)).
