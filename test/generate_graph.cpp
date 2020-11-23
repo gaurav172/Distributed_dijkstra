@@ -5,12 +5,12 @@ using namespace std;
 // generated 
 #define RUN 1 
 // Define the maximum number of vertices of the graph 
-#define MAX_VERTICES 20 
+#define MAX_VERTICES 4000 
 // Define the maximum number of edges 
-#define MAX_EDGES 200 
+#define MAX_EDGES 24000 
 // Define the maximum weight of edges 
-#define MAXWEIGHT 200 
-#define MAX_PROC 10
+#define MAXWEIGHT 10 
+#define MAX_PROC 1000
 #define Inf 10000000
 
 int graph[MAX_VERTICES+2][MAX_VERTICES+2];
@@ -62,7 +62,7 @@ int main()
             // Search for a random "new" edge every time 
             // Note - In a tree the edge (a, b) is same 
             // as the edge (b, a) 
-            while (container.find(p) != container.end()) 
+            while (container.find(p) != container.end() or container.find({b, a}) != container.end()) 
             { 
                 a = 1 + rand() % NUM; 
                 b = 1 + rand() % NUM; 
