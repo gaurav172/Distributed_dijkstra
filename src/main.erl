@@ -1,7 +1,6 @@
 -module(main).
 
 -export([start/0]).
--on_load(start/0).
 
 -import(distributors, [register_proc/2, read_int_line/1]).
 -import(helpers, [make_displs/2, hello/1]).
