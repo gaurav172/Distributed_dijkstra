@@ -42,7 +42,7 @@ int main()
   
     for (int i=1; i<=RUN; i++) 
     { 
-        NUM = 1 + rand() % MAX_VERTICES; 
+        NUM = 500; 
   
         // Define the maximum number of edges of the graph 
         // Since the most dense graph can have N*(N-1)/2 edges 
@@ -102,7 +102,7 @@ int main()
         } 
 
         int source = 1;
-        int num_proc = 2 + rand()%MAX_PROC;
+        int num_proc = 2;
         num_proc = min(num_proc, NUM);
         cout<<endl;
         cout<<"Num_Proc: "<<num_proc<<" Source: "<<source<<endl;

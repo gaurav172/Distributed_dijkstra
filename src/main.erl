@@ -23,7 +23,7 @@ start() ->
     ]),
     
 % Open the test file to read
-    {ok, Device} = file:open("./test.txt", [read]),
+    {ok, Device} = file:open("test.txt", [read]),
 % Get first line of input and print it.
     [NumVertices, NumProcs, Source] = distributors:read_int_line(Device),
     
